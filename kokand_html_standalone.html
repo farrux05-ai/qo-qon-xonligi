@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qo'qon Xonligi Dashboard (1709-1876)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #581c87 50%, #1e293b 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #7c3aed 0%, #3b82f6 100%);
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header p {
+            color: #ddd6fe;
+            font-size: 1.1rem;
+        }
+
+        .nav {
+            background: #1e293b;
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .nav-buttons {
+            display: inline-flex;
+            gap: 0.5rem;
+        }
+
+        .nav-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            background: #334155;
+            color: #cbd5e1;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: #475569;
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(90deg, #7c3aed 0%, #3b82f6 100%);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .card h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: #fbbf24;
+        }
+
+        .card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: #a78bfa;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        .stat-card {
+            padding: 1.5rem;
+            border-radius: 1rem;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.9;
+        }
+
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+
+        .stat-card .label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .stat-blue { background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); }
+        .stat-purple { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); }
+        .stat-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .stat-red { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        table th {
+            background: #334155;
+            padding: 1rem;
+            text-align: left;
+            color: #cbd5e1;
+        }
+
+        table td {
+            padding: 1rem;
+            border-bottom: 1px solid #334155;
+        }
+
+        table tr:hover {
+            background: rgba(51, 65, 85, 0.3);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .badge-green { background: rgba(16, 185, 129, 0.3); color: #6ee7b7; }
+        .badge-yellow { background: rgba(251, 191, 36, 0.3); color: #fde68a; }
+        .badge-red { background: rgba(239, 68, 68, 0.3); color: #fca5a5; }
+
+        .timeline {
+            position: relative;
+            padding-left: 3rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 1rem;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #10b981 0%, #fbbf24 50%, #ef4444 100%);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: rgba(51, 65, 85, 0.5);
+            border-radius: 0.5rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2.5rem;
+            top: 1rem;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            border: 4px solid #1e293b;
+        }
+
+        .timeline-green::before { background: #10b981; }
+        .timeline-yellow::before { background: #fbbf24; }
+        .timeline-orange::before { background: #f97316; }
+        .timeline-red::before { background: #ef4444; }
+
+        .hierarchy {
+            margin-left: 2rem;
+            border-left: 2px solid #475569;
+            padding-left: 1rem;
+        }
+
+        .hierarchy-item {
+            background: rgba(51, 65, 85, 0.5);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .hierarchy-item:hover {
+            transform: translateX(5px);
+            background: rgba(51, 65, 85, 0.8);
+        }
+
+        .level-0 { border-left-color: #fbbf24; }
+        .level-1 { border-left-color: #3b82f6; }
+        .level-2 { border-left-color: #10b981; }
+        .level-3 { border-left-color: #8b5cf6; }
+        .level-4 { border-left-color: #ec4899; }
+
+        .footer {
+            background: #1e293b;
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
+            margin-top: 3rem;
+        }
+
+        canvas {
+            max-height: 400px !important;
+        }
+
+        .event-item {
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .event-positive { background: rgba(16, 185, 129, 0.2); }
+        .event-negative { background: rgba(239, 68, 68, 0.2); }
+
+        .icon {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <span class="icon">👑</span>
+            QO'QON XONLIGI DASHBOARD
+        </h1>
+        <p>1709-1876 | Tarixiy Ma'lumotlar va Tahlil</p>
+    </div>
+
+    <nav class="nav">
+        <div class="nav-buttons">
+            <button class="nav-btn active" onclick="showPage('xonlar')">👑 Xonlar</button>
+            <button class="nav-btn" onclick="showPage('barqarorlik')">📉 Barqarorlik</button>
+            <button class="nav-btn" onclick="showPage('kuchlar')">🛡️ Siyosiy Kuchlar</button>
+            <button class="nav-btn" onclick="showPage('bekliklar')">🗺️ Bekliklar</button>
+            <button class="nav-btn" onclick="showPage('tashqi')">🌍 Tashqi Aloqalar</button>
+            <button class="nav-btn" onclick="showPage('lavozimlar')">👥 Lavozimlar</button>
+            <button class="nav-btn" onclick="showPage('voqealar')">📅 Voqealar</button>
+            <button class="nav-btn" onclick="showPage('statistika')">🏆 Statistika</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Xonlar Page -->
+        <div id="xonlar" class="page active">
+            <div class="card">
+                <h2>👑 Xonlar Hukmronlik Muddati</h2>
+                <canvas id="khansChart"></canvas>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <h3>Xonlar Holati</h3>
+                    <canvas id="statusChart"></canvas>
+                </div>
+                <div class="card">
+                    <h3>Xronologiya</h3>
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Xonlar Ro'yxati</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Xon nomi</th>
+                            <th>Davr</th>
+                            <th>Muddati</th>
+                            <th>Holati</th>
+                        </tr>
+                    </thead>
+                    <tbody id="khansTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Barqarorlik Page -->
+        <div id="barqarorlik" class="page">
+            <div class="card">
+                <h2>📉 Barqarorlik Dinamikasi (1709-1876)</h2>
+                <canvas id="stabilityChart"></canvas>
+            </div>
+
+            <div class="grid grid-3">
+                <div class="stat-card stat-green">
+                    <h3>Eng Barqaror Davr</h3>
+                    <div class="value">1800-1842</div>
+                    <div class="label">Oltin Davr - 90%</div>
+                </div>
+                <div class="stat-card stat-red">
+                    <h3>Eng Beqaror Davr</h3>
+                    <div class="value">1858-1865</div>
+                    <div class="label">Doimiy Beqarorlik - 20%</div>
+                </div>
+                <div class="stat-card stat-blue">
+                    <h3>O'rtacha Barqarorlik</h3>
+                    <div class="value">50.7%</div>
+                    <div class="label">1709-1876</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Siyosiy Kuchlar Page -->
+        <div id="kuchlar" class="page">
+            <div class="card">
+                <h2>🛡️ Siyosiy Kuchlar Balansi (1842-1876)</h2>
+                <canvas id="powerChart"></canvas>
+            </div>
+
+            <div class="card">
+                <h3>Lavozimlar Iyerarxiyasi</h3>
+                <div style="padding: 1rem;">
+                    <div style="padding: 1rem; background: rgba(251, 191, 36, 0.2); border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                        ➡️ Xon → Hammaga
+                    </div>
+                    <div style="padding: 1rem; background: rgba(59, 130, 246, 0.2); border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                        ➡️ Qushbegi → Harbiy qismga
+                    </div>
+                    <div style="padding: 1rem; background: rgba(16, 185, 129, 0.2); border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                        ➡️ Devonbegi → Moliya bo'limiga
+                    </div>
+                    <div style="padding: 1rem; background: rgba(139, 92, 246, 0.2); border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                        ➡️ Qozikalon → Sud tizimiga
+                    </div>
+                    <div style="padding: 1rem; background: rgba(236, 72, 153, 0.2); border-radius: 0.5rem;">
+                        ➡️ Beklar → Viloyatlarga
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bekliklar Page -->
+        <div id="bekliklar" class="page">
+            <div class="card">
+                <h2>🗺️ Bekliklar Tahlili</h2>
+                <canvas id="bekliksChart"></canvas>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <h3>Isyonlar Soni</h3>
+                    <canvas id="rebellionsChart"></canvas>
+                </div>
+                <div class="card">
+                    <h3>Sodiqlik Darajasi</h3>
+                    <canvas id="loyaltyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tashqi Aloqalar Page -->
+        <div id="tashqi" class="page">
+            <div class="card">
+                <h2>🌍 Tashqi Munosabatlar</h2>
+                <canvas id="foreignChart"></canvas>
+            </div>
+
+            <div class="grid grid-3">
+                <div class="stat-card stat-red">
+                    <h3>Buxoro</h3>
+                    <div class="value">95%</div>
+                    <div class="label">Dushman</div>
+                </div>
+                <div class="stat-card stat-blue">
+                    <h3>Xiva</h3>
+                    <div class="value">60%</div>
+                    <div class="label">Neytral</div>
+                </div>
+                <div class="stat-card stat-purple">
+                    <h3>Rossiya</h3>
+                    <div class="value">100%</div>
+                    <div class="label">Bosqinchi</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lavozimlar Page -->
+        <div id="lavozimlar" class="page">
+            <div class="card">
+                <h2>👥 Davlat Tuzilmasi - Iyerarxik Ko'rinish</h2>
+                <p style="color: #94a3b8; margin-bottom: 2rem;">
+                    Qo'qon xonligidagi hokimiyat tuzilmasi va bo'ysunish tartibi
+                </p>
+
+                <div id="hierarchyStructure"></div>
+            </div>
+        </div>
+
+        <!-- Voqealar Page -->
+        <div id="voqealar" class="page">
+            <div class="card">
+                <h2>📅 Muhim Tarixiy Voqealar</h2>
+                <canvas id="eventsChart"></canvas>
+            </div>
+
+            <div class="card">
+                <h3>Voqealar Jadvali</h3>
+                <div id="eventsList"></div>
+            </div>
+        </div>
+
+        <!-- Statistika Page -->
+        <div id="statistika" class="page">
+            <div class="grid grid-4">
+                <div class="stat-card stat-blue">
+                    <span class="icon">🏆</span>
+                    <h3>Jami Xonlar</h3>
+                    <div class="value">12</div>
+                    <div class="label">1709-1862</div>
+                </div>
+                <div class="stat-card stat-purple">
+                    <span class="icon">👑</span>
+                    <h3>O'rtacha Hukmronlik</h3>
+                    <div class="value">11.8</div>
+                    <div class="label">yil</div>
+                </div>
+                <div class="stat-card stat-green">
+                    <span class="icon">📈</span>
+                    <h3>Eng Uzun Hukmronlik</h3>
+                    <div class="value">35</div>
+                    <div class="label">yil - Norbo'tabiy</div>
+                </div>
+                <div class="stat-card stat-red">
+                    <span class="icon">⚔️</span>
+                    <h3>O'ldirilgan Xonlar</h3>
+                    <div class="value">35%</div>
+                    <div class="label">6 ta xon</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📊 Tarixiy Timeline</h2>
+                <div class="timeline">
+                    <div class="timeline-item timeline-green">
+                        <h4 style="color: #6ee7b7; font-size: 1.2rem; margin-bottom: 0.5rem;">1709-1800: Qurilish va Rivojlanish</h4>
+                        <p style="color: #cbd5e1;">Xonlik tashkil topdi va mustahkamlandi</p>
+                    </div>
+                    <div class="timeline-item timeline-yellow">
+                        <h4 style="color: #fde68a; font-size: 1.2rem; margin-bottom: 0.5rem;">1800-1842: Oltin Davr</h4>
+                        <p style="color: #cbd5e1;">Eng kuchli va eng katta hudud davri</p>
+                    </div>
+                    <div class="timeline-item timeline-orange">
+                        <h4 style="color: #fdba74; font-size: 1.2rem; margin-bottom: 0.5rem;">1842-1865: Inqiroz</h4>
+                        <p style="color: #cbd5e1;">Ichki urushlar va beqarorlik davri</p>
+                    </div>
+                    <div class="timeline-item timeline-red">
+                        <h4 style="color: #fca5a5; font-size: 1.2rem; margin-bottom: 0.5rem;">1865-1876: Tugash</h4>
+                        <p style="color: #cbd5e1;">Rossiya protektorati va xonlikning yo'q qilinishi</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p style="margin-bottom: 0.5rem; font-size: 1.1rem;">Qo'qon Xonligi (1709-1876) - Markaziy Osiyo Tarixi</p>
+        <p style="font-size: 0.9rem;">Ma'lumotlar: Wikipedia, Cambridge History, ResearchGate, Britannica</p>
+    </div>
+
+    <script>
+        // Ma'lumotlar
+        const khans = [
+            { name: 'Shohruxbiy', start: 1709, end: 1721, years: 12, status: 'Barqaror' },
+            { name: 'Abdurahimbiy', start: 1721, end: 1733, years: 12, status: 'Barqaror' },
+            { name: 'Abdulkarimbiy', start: 1733, end: 1750, years: 17, status: 'Barqaror' },
+            { name: 'Erdonabiy', start: 1753, end: 1762, years: 9, status: "O'rtacha" },
+            { name: 'Norbo\'tabiy', start: 1763, end: 1798, years: 35, status: 'Barqaror' },
+            { name: 'Olimxon', start: 1800, end: 1809, years: 9, status: 'Barqaror' },
+            { name: 'Umarxon', start: 1809, end: 1822, years: 13, status: 'Beqaror' },
+            { name: 'Muhammad Alixon', start: 1822, end: 1841, years: 19, status: 'Barqaror' },
+            { name: 'Sheralixon', start: 1842, end: 1844, years: 2, status: 'Juda beqaror' },
+            { name: 'Murodxon', start: 1845, end: 1845, years: 1, status: 'Juda beqaror' },
+            { name: 'Xudoyorxon', start: 1845, end: 1858, years: 13, status: 'Beqaror' },
+            { name: 'Mallaxon', start: 1858, end: 1862, years: 4, status: 'Juda beqaror' },
+        ];
+
+        const events = [
+            { year: 1709, event: 'Xonlik tashkil', impact: 100 },
+            { year: 1745, event: 'Buxoro urushi', impact: -20 },
+            { year: 1805, event: 'Toshkent olindi', impact: 50 },
+            { year: 1810, event: 'Olimxon o\'ldirildi', impact: -40 },
+            { year: 1835, event: 'Oltin davr', impact: 80 },
+            { year: 1842, event: 'M.Alixon o\'ldirildi', impact: -60 },
+            { year: 1865, event: 'Toshkent yo\'qoldi', impact: -50 },
+            { year: 1868, event: 'Protektorat', impact: -60 },
+            { year: 1875, event: 'Isyon', impact: -80 },
+            { year: 1876, event: 'Tugash', impact: -100 },
+        ];
+
+        // Sahifalarni almashtirish
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Xonlar jadvali
+        const table = document.getElementById('khansTable');
+        khans.forEach((khan, idx) => {
+            const row = table.insertRow();
+            row.innerHTML = `
+                <td>${idx + 1}</td>
+                <td><strong>${khan.name}</strong></td>
+                <td>${khan.start}-${khan.end}</td>
+                <td style="color: #a78bfa;">${khan.years} yil</td>
+                <td><span class="badge badge-${khan.status === 'Barqaror' ? 'green' : khan.status === 'Beqaror' ? 'yellow' : 'red'}">${khan.status}</span></td>
+            `;
+        });
+
+        // Voqealar ro'yxati
+        const eventsList = document.getElementById('eventsList');
+        events.forEach(event => {
+            const div = document.createElement('div');
+            div.className = `event-item event-${event.impact > 0 ? 'positive' : 'negative'}`;
+            div.innerHTML = `
+                <div>
+                    <div style="color: #94a3b8; font-size: 0.875rem;">${event.year}</div>
+                    <div style="font-weight: 600;">${event.event}</div>
+                </div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: ${event.impact > 0 ? '#6ee7b7' : '#fca5a5'};">
+                    ${event.impact > 0 ? '+' : ''}${event.impact}
+                </div>
+            `;
+            eventsList.appendChild(div);
+        });
+
+        // Iyerarxiya tuzilmasi
+        const hierarchyHTML = `
+            <div class="hierarchy-item level-0">
+                <h4 style="font-size: 1.2rem; color: #fbbf24;">Xon (100%)</h4>
+                <p style="color: #cbd5e1; margin-top: 0.5rem;">Oliy hukmdor, absolut hokimiyat</p>
+            </div>
+            <div class="hierarchy">
+                <div class="hierarchy-item level-1">
+                    <h4 style="font-size: 1.1rem; color: #3b82f6;">Qushbegi (75%)</h4>
+                    <p style="color: #cbd5e1; margin-top: 0.5rem;">Bosh vazir, harbiy qo'shin boshlig'i</p>
+                </div>
+                <div class="hierarchy">
+                    <div class="hierarchy-item level-2">
+                        <h4 style="color: #10b981;">Mingboshi (35%) → Yuzbochilar (25%) → Askarlar (10%)</h4>
+                    </div>
+                    <div class="hierarchy-item level-2">
+                        <h4 style="color: #10b981;">Yasavulboshi (30%) → Yasavullar (15%)</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="hierarchy">
+                <div class="hierarchy-item level-1">
+                    <h4 style="font-size: 1.1rem; color: #3b82f6;">Devonbegi (55%)</h4>
+                    <p style="color: #cbd5e1; margin-top: 0.5rem;">Moliya va ma'muriy ishlar</p>
+                </div>
+                <div class="hierarchy">
+                    <div class="hierarchy-item level-2">
+                        <h4 style="color: #10b981;">Zakotchilar (30%)</h4>
+                    </div>
+                    <div class="hierarchy-item level-2">
+                        <h4 style="color: #10b981;">Mirza (25%)</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="hierarchy">
+                <div class="hierarchy-item level-1">
+                    <h4 style="font-size: 1.1rem; color: #3b82f6;">Qozikalon (45%)</h4>
+                    <p style="color: #cbd5e1; margin-top: 0.5rem;">Shariatni qo'llash, sud</p>
+                </div>
+                <div class="hierarchy">
+                    <div class="hierarchy-item level-2">
+                        <h4 style="color: #10b981;">Qozilar (30%)</h4>
+                    </div>
+                    <div class="hierarchy-item level-2">
+                        <h4 style="color: #10b981;">Muftiylar (25%)</h4>
+                    </div>
+                    <div class="hierarchy-item level-2">
+                        <h4 style="color: #10b981;">Dodkhoh (15%)</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="hierarchy">
+                <div class="hierarchy-item level-1">
+                    <h4 style="font-size: 1.1rem; color: #3b82f6;">Beklar (50%)</h4>
+                    <p style="color: #cbd5e1; margin-top: 0.5rem;">Viloyat hokimlari</p>
+                </div>
+                <div class="hierarchy">
+                    <div class="hierarchy-item level-2">
+                        <h4 style="color: #10b981;">Mahalliy rahbarlar (25%)</h4>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('hierarchyStructure').innerHTML = hierarchyHTML;
+
+        // Chart.js grafiklari
+        const chartColors = {
+            primary: '#8b5cf6',
+            blue: '#3b82f6',
+            green: '#10b981',
+            red: '#ef4444',
+            yellow: '#fbbf24',
+            purple: '#8b5cf6',
+            pink: '#ec4899'
+        };
+
+        // Xonlar grafigi
+        new Chart(document.getElementById('khansChart'), {
+            type: 'bar',
+            data: {
+                labels: khans.map(k => k.name),
+                datasets: [{
+                    label: 'Hukmronlik muddati (yil)',
+                    data: khans.map(k => k.years),
+                    backgroundColor: chartColors.primary,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: '#374151' }
+                    },
+                    x: {
+                        ticks: { 
+                            color: '#9ca3af',
+                            maxRotation: 45,
+                            minRotation: 45
+                        },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Holat grafigi
+        new Chart(document.getElementById('statusChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Barqaror', 'Beqaror', 'Juda beqaror'],
+                datasets: [{
+                    data: [6, 3, 3],
+                    backgroundColor: [chartColors.blue, chartColors.yellow, chartColors.red]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#9ca3af' }
+                    }
+                }
+            }
+        });
+
+        // Xronologiya grafigi
+        new Chart(document.getElementById('timelineChart'), {
+            type: 'line',
+            data: {
+                labels: khans.map(k => k.start),
+                datasets: [{
+                    label: 'Hukmronlik muddati',
+                    data: khans.map(k => k.years),
+                    borderColor: chartColors.blue,
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: '#374151' }
+                    },
+                    x: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: '#374151' }
+                    }
+                }
+            }
+        });
+
+        // Barqarorlik grafigi
+        new Chart(document.getElementById('stabilityChart'), {
+            type: 'line',
+            data: {
+                labels: ['1709-1750', '1750-1800', '1800-1842', '1842-1858', '1858-1865', '1865-1875', '1875-1876'],
+                datasets: [{
+                    label: 'Barqarorlik %',
+                    data: [75, 85, 90, 30, 20, 35, 10],
+                    borderColor: chartColors.green,
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#9ca3af' } }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: '#374151' }
+                    },
+                    x: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: '#374151' }
+                    }
+                }
+            }
+        });
+
+        // Siyosiy kuchlar grafigi
+        new Chart(document.getElementById('powerChart'), {
+            type: 'line',
+            data: {
+                labels: [1842, 1850, 1858, 1865, 1870, 1875, 1876],
+                datasets: [
+                    {
+                        label: 'Xon',
+                        data: [40, 35, 30, 25, 20, 15, 0],
+                        borderColor: chartColors.blue,
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        fill: true
+                    },
+                    {
+                        label: 'Qushbegi',
+                        data: [30, 25, 20, 15, 10, 5, 0],
+                        borderColor: chartColors.green,
+                        backgroundColor: 'rgba(16, 185, 129, 0.5)',
+                        fill: true
+                    },
+                    {
+                        label: 'Beklar',
+                        data: [30, 40, 50, 30, 20, 10, 0],
+                        borderColor: chartColors.yellow,
+                        backgroundColor: 'rgba(251, 191, 36, 0.5)',
+                        fill: true
+                    },
+                    {
+                        label: 'Rossiya',
+                        data: [0, 0, 0, 30, 50, 70, 100],
+                        borderColor: chartColors.red,
+                        backgroundColor: 'rgba(239, 68, 68, 0.5)',
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#9ca3af' } }
+                },
+                scales: {
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: '#374151' }
+                    },
+                    x: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: '#374151' }
+                    }
+                }
+            }
+        });
+
+        // Bekliklar grafigi
+        const bekliks = [
+            { name: 'Toshkent', importance: 95, rebellions: 8, loyalty: 25 },
+            { name: 'Chimkent', importance: 80, rebellions: 5, loyalty: 35 },
+            { name: 'Osh', importance: 75, rebellions: 3, loyalty: 55 },
+            { name: 'Andijon', importance: 85, rebellions: 6, loyalty: 65 },
+            { name: 'Margilon', importance: 80, rebellions: 4, loyalty: 65 },
+            { name: 'Namangan', importance: 70, rebellions: 5, loyalty: 55 },
+            { name: 'Qashqar', importance: 90, rebellions: 7, loyalty: 15 }
+        ];
+
+        new Chart(document.getElementById('bekliksChart'), {
+            type: 'bar',
+            data: {
+                labels: bekliks.map(b => b.name),
+                datasets: [{
+                    label: 'Ahamiyat',
+                    data: bekliks.map(b => b.importance),
+                    backgroundColor: chartColors.blue
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#9ca3af' } }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: '#374151' }
+                    },
+                    x: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('rebellionsChart'), {
+            type: 'bar',
+            data: {
+                labels: bekliks.map(b => b.name),
+                datasets: [{
+                    label: 'Isyonlar soni',
+                    data: bekliks.map(b => b.rebellions),
+                    backgroundColor: chartColors.red
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: '#374151' }
+                    },
+                    x: {
+                        ticks: { 
+                            color: '#9ca3af',
+                            maxRotation: 45,
+                            minRotation: 45
+                        },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('loyaltyChart'), {
+            type: 'bar',
+            data: {
+                labels: bekliks.map(b => b.name),
+                datasets: [{
+                    label: 'Sodiqlik %',
+                    data: bekliks.map(b => b.loyalty),
+                    backgroundColor: chartColors.green
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: '#374151' }
+                    },
+                    y: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Tashqi aloqalar grafigi
+        const foreign = [
+            { name: 'Buxoro', impact: 95 },
+            { name: 'Xiva', impact: 60 },
+            { name: 'Rossiya', impact: 100 },
+            { name: 'Qozoqlar', impact: 70 },
+            { name: 'Qashqar', impact: 75 },
+            { name: 'Britaniya', impact: 30 }
+        ];
+
+        new Chart(document.getElementById('foreignChart'), {
+            type: 'bar',
+            data: {
+                labels: foreign.map(f => f.name),
+                datasets: [{
+                    label: 'Ta\'sir darajasi',
+                    data: foreign.map(f => f.impact),
+                    backgroundColor: [
+                        chartColors.blue,
+                        chartColors.red,
+                        chartColors.green,
+                        chartColors.yellow,
+                        chartColors.purple,
+                        chartColors.pink
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: '#374151' }
+                    },
+                    x: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Voqealar grafigi
+        new Chart(document.getElementById('eventsChart'), {
+            type: 'line',
+            data: {
+                labels: events.map(e => e.year),
+                datasets: [{
+                    label: 'Ta\'sir',
+                    data: events.map(e => e.impact),
+                    borderColor: chartColors.red,
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: '#374151' }
+                    },
+                    x: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: '#374151' }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
